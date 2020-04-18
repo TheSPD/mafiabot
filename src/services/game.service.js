@@ -85,6 +85,10 @@ function create(models) {
     models.player.kill(murderedId);
   }
 
+  function voteOut(killId) {
+    models.player.kill(killId);
+  }
+
   function status() {
     alivePlayers = models.player.getAlivePlayers();
     mafiaPlayers = models.player.getAliveMafiaPlayers();
@@ -122,6 +126,7 @@ function create(models) {
     setNight: setNight,
     setDay: setDay,
     murder: murder,
+    voteOut: voteOut,
     status: status,
     reset: reset,
   };

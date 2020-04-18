@@ -158,23 +158,34 @@ function start(client) {
                     return;
                   }
                   if (majority.length == 1) {
-                    client
-                      .sendText(groupId, "Village sleeps....")
-                      .then(() => mafiaApp.player.getAliveMafiaPlayers())
-                      .then((aliveMafiaPlayers) =>
-                        Promise.all(
-                          aliveMafiaPlayers.map((playerId) => {
-                            client.addParticipant(mafiaGroupId, playerId);
-                          })
-                        )
-                      )
-                      .then(() => client.sendText(groupId, "Mafia awakens...."))
-                      .then(() => mafiaApp.game.sleep(1000))
-                      .then(() => {
-                        alivePlayers = mafiaApp.player.getAlivePlayers();
-                        client.sendMentioned(
-                          mafiaApp.game.getMafiaGroup(),
-                          `Murder one of the players : 
+                    mafiaApp.game
+                      .voteOut()
+                      .then(() => mafiaApp.game.status())
+                      .then(({ villagersWon, mafiaWon }) => {
+                        if (villagersWon) {
+                          client.sendText(groupId, "Villagers won!!!");
+                        } else if (mafiaWon) {
+                          client.sendText(groupId, "Mafia won!!!");
+                        } else {
+                          client
+                            .sendText(groupId, "Village sleeps....")
+                            .then(() => mafiaApp.player.getAliveMafiaPlayers())
+                            .then((aliveMafiaPlayers) =>
+                              Promise.all(
+                                aliveMafiaPlayers.map((playerId) => {
+                                  client.addParticipant(mafiaGroupId, playerId);
+                                })
+                              )
+                            )
+                            .then(() =>
+                              client.sendText(groupId, "Mafia awakens....")
+                            )
+                            .then(() => mafiaApp.game.sleep(1000))
+                            .then(() => {
+                              alivePlayers = mafiaApp.player.getAlivePlayers();
+                              client.sendMentioned(
+                                mafiaApp.game.getMafiaGroup(),
+                                `Murder one of the players : 
                     ${alivePlayers
                       .map(
                         (playerId, index) =>
@@ -185,15 +196,17 @@ function start(client) {
                       Type murder <number> to murder the player from the numbered list
       
                       Remember that this is **not voting**. Decide among yourself and then choose one player to murder. Anyone can type the command to murder`,
-                          alivePlayers.map((playerId) =>
-                            getMentionFromId(playerId)
-                          )
-                        );
-                      })
-                      .catch((err) => {
-                        console.log(err);
-                        console.log(groupId);
-                        client.sendText(groupId, err);
+                                alivePlayers.map((playerId) =>
+                                  getMentionFromId(playerId)
+                                )
+                              );
+                            })
+                            .catch((err) => {
+                              console.log(err);
+                              console.log(groupId);
+                              client.sendText(groupId, err);
+                            });
+                        }
                       });
                   }
                 })

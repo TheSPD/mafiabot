@@ -20,6 +20,7 @@ function start(client) {
     isLinkedGroup = mafiaApp.game.isLinkedGroup(groupId);
     senderId = message.sender.id;
     isMafiaGroup = mafiaApp.game.isMafiaGroup(groupId);
+    status = mafiaApp.game.status();
 
     if (message.body === "link") {
       groupId = message.from;
@@ -108,7 +109,12 @@ function start(client) {
       return;
     }
 
-    if (message.body.startsWith("vote") && isLinkedGroup) {
+    if (
+      message.body.startsWith("vote") &&
+      isLinkedGroup &&
+      status.isDay &&
+      status.isStarted
+    ) {
       if (message.mentionedJidList.length !== 1) {
         client.sendText(message.from, `Please vote for one player`);
         return;
@@ -167,8 +173,11 @@ function start(client) {
                         } else if (mafiaWon) {
                           client.sendText(groupId, "Mafia won!!!");
                         } else {
-                          client
-                            .sendText(groupId, "Village sleeps....")
+                          mafiaApp.game
+                            .setNight()
+                            .then(() =>
+                              client.sendText(groupId, "Village sleeps....")
+                            )
                             .then(() => mafiaApp.player.getAliveMafiaPlayers())
                             .then((aliveMafiaPlayers) =>
                               Promise.all(
@@ -222,7 +231,12 @@ function start(client) {
       }
     }
 
-    if (message.body.startsWith("murder") && isMafiaGroup) {
+    if (
+      message.body.startsWith("murder") &&
+      isMafiaGroup &&
+      status.isNight &&
+      status.isStarted
+    ) {
       parameters = message.body.split(" ").slice(1);
 
       if (parameters.length !== 1) {

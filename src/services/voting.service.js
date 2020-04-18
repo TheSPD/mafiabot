@@ -7,11 +7,11 @@ function voting() {
 function create(models) {
   function vote(fromId, toId) {
     alivePlayers = models.player.getAlivePlayers();
-    if (!alivePlayers.inclues(fromId)) {
+    if (!alivePlayers.includes(fromId)) {
       throw "Only alive players can vote";
     }
 
-    if (!alivePlayers.inclues(toId)) {
+    if (!alivePlayers.includes(toId)) {
       throw "Only votes against alive players will be counted";
     }
     

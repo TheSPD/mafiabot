@@ -100,9 +100,9 @@ function create(models) {
     });
 
     return {
-      isStarted: models.game.isStarted,
-      isDay: models.game.isDay,
-      isNight: models.game.isNight,
+      isStarted: models.game.isStarted(),
+      isDay: models.game.isDay(),
+      isNight: models.game.isNight(),
       alivePlayers: alivePlayers,
       villagersWon: mafiaPlayers.length === 0,
       mafiaWon: mafiaPlayers.length >= nonMafiaPlayers.length,

@@ -33,6 +33,10 @@ function create(models) {
     return models.player.getAlivePlayers();
   }
 
+  function getAliveMafiaPlayers() {
+    return models.player.getAliveMafiaPlayers();
+  }
+
   return {
     add: add,
     kill: kill,
@@ -40,6 +44,7 @@ function create(models) {
     getAllPlayers: getAllPlayers,
     getAliveNonMafiaPlayers: getAliveNonMafiaPlayers,
     getAlivePlayers: getAlivePlayers,
+    getAliveMafiaPlayers: getAliveMafiaPlayers,
   };
 }
 

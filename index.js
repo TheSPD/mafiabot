@@ -98,7 +98,7 @@ function start(client) {
                 
                 Type murder <number> to murder the player from the numbered list
 
-                Remember that this is **not voting**. Decide among yourself and then choose one player to murder. Anyone can type the command to murder`,
+                Remember that this is *not voting*. Decide among yourself and then choose one player to murder. Anyone can type the command to murder`,
               alivePlayers.map((playerId) => getMentionFromId(playerId))
             );
           });
@@ -129,9 +129,9 @@ function start(client) {
               client.sendMentioned(
                 groupId,
                 `Remaining Voters: ${remainingVoters.map(
-                  (playerId) => `@${getMentionedId(playerId)}`
+                  (playerId) => `@${getMentionFromId(playerId)}`
                 )}`,
-                remainingVoters
+                remainingVoters.map((playerId) => getMentionFromId(playerId))
               );
               return false;
             }
@@ -140,38 +140,41 @@ function start(client) {
             if (!completedVoting) {
               return;
             } else {
-              mafiaApp.voting.getVoteCounts().then((voteCounts) => {
-                total = Object.values(voteCounts).reduce((a, b) => a + b);
-                majorityMarker = Math.floor(total / 2);
-                majority = Object.keys(voteCounts).filter(
-                  (id) => voteCounts[id] > majorityMarker
-                );
+              mafiaApp.voting
+                .getVoteCounts()
+                .then((voteCounts) => {
+                  total = Object.values(voteCounts).reduce((a, b) => a + b);
+                  majorityMarker = Math.floor(total / 2);
+                  majority = Object.keys(voteCounts).filter(
+                    (id) => voteCounts[id] > majorityMarker
+                  );
 
-                if (majority.length !== 1) {
-                  mafiaApp.voting
-                    .reset()
-                    .then(() =>
-                      client.sendText("No consensus reached. Vote again")
-                    );
-                  return;
-                }
-                client
-                  .sendText(groupId, "Village sleeps....")
-                  .then(() => mafiaApp.player.getAliveMafiaPlayers())
-                  .then((aliveMafiaPlayers) =>
-                    Promise.all(
-                      aliveMafiaPlayers.map((playerId) => {
-                        client.addParticipant(mafiaGroupId, playerId);
-                      })
-                    )
-                  )
-                  .then(() => client.sendText(groupId, "Mafia awakens...."))
-                  .then(() => mafiaApp.game.sleep(1000))
-                  .then(() => {
-                    alivePlayers = mafiaApp.player.getAlivePlayers();
-                    client.sendMentioned(
-                      mafiaApp.game.getMafiaGroup(),
-                      `Murder one of the players : 
+                  if (majority.length > 1) {
+                    mafiaApp.voting
+                      .reset()
+                      .then(() =>
+                        client.sendText("No consensus reached. Vote again")
+                      );
+                    return;
+                  }
+                  if (majority.length == 1) {
+                    client
+                      .sendText(groupId, "Village sleeps....")
+                      .then(() => mafiaApp.player.getAliveMafiaPlayers())
+                      .then((aliveMafiaPlayers) =>
+                        Promise.all(
+                          aliveMafiaPlayers.map((playerId) => {
+                            client.addParticipant(mafiaGroupId, playerId);
+                          })
+                        )
+                      )
+                      .then(() => client.sendText(groupId, "Mafia awakens...."))
+                      .then(() => mafiaApp.game.sleep(1000))
+                      .then(() => {
+                        alivePlayers = mafiaApp.player.getAlivePlayers();
+                        client.sendMentioned(
+                          mafiaApp.game.getMafiaGroup(),
+                          `Murder one of the players : 
                     ${alivePlayers
                       .map(
                         (playerId, index) =>
@@ -182,10 +185,23 @@ function start(client) {
                       Type murder <number> to murder the player from the numbered list
       
                       Remember that this is **not voting**. Decide among yourself and then choose one player to murder. Anyone can type the command to murder`,
-                      alivePlayers.map((playerId) => getMentionFromId(playerId))
-                    );
-                  });
-              });
+                          alivePlayers.map((playerId) =>
+                            getMentionFromId(playerId)
+                          )
+                        );
+                      })
+                      .catch((err) => {
+                        console.log(err);
+                        console.log(groupId);
+                        client.sendText(groupId, err);
+                      });
+                  }
+                })
+                .catch((err) => {
+                  console.log(err);
+                  console.log(groupId);
+                  client.sendText(groupId, err);
+                });
             }
           });
       } catch (err) {

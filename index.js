@@ -157,58 +157,116 @@ function start(client) {
         }
 
         mafiaApp.game.voteOut(majority[0]);
-        var { villagersWon, mafiaWon } = mafiaApp.game.status();
-
-        if (villagersWon) {
-          client
-            .sendText(groupId, "Villagers won!!!")
-            .then(() => mafiaApp.game.reset())
-            .catch((err) => {
-              console.log(err);
-            });
-        } else if (mafiaWon) {
-          client
-            .sendText(groupId, "Mafia won!!!")
-            .then(() => mafiaApp.game.reset())
-            .catch((err) => {
-              console.log(err);
-            });
-        } else {
-          mafiaApp.game.setNight();
-          client.sendText(groupId, "Village sleeps....");
-          aliveMafiaPlayers = mafiaApp.player.getAliveMafiaPlayers();
-
-          Promise.all(
-            aliveMafiaPlayers.map((playerId) => {
-              client.addParticipant(mafiaGroupId, playerId);
-            })
+        client
+          .sendText(
+            groupId,
+            `Village decided to lynch ${getMentionFromId(majority[0])}`
           )
-            .then(() => client.sendText(groupId, "Mafia awakens...."))
-            .then(() => mafiaApp.game.sleep(1000))
-            .then(() => {
-              alivePlayers = mafiaApp.player.getAlivePlayers();
-              client.sendMentioned(
-                mafiaApp.game.getMafiaGroup(),
-                `Murder one of the players : 
-                    ${alivePlayers
-                      .map(
-                        (playerId, index) =>
-                          `${index} @${getMentionFromId(playerId)}`
-                      )
-                      .join("\n")}
-                      
-                      Type murder <number> to murder the player from the numbered list
-      
-                      Remember that this is **not voting**. Decide among yourself and then choose one player to murder. Anyone can type the command to murder`,
-                alivePlayers.map((playerId) => getMentionFromId(playerId))
-              );
-            })
-            .catch((err) => {
-              console.log(err);
-              console.log(groupId);
-              client.sendText(groupId, err);
-            });
-        }
+          .then(() => mafiaApp.game.status())
+          .then(({ villagersWon, mafiaWon }) => {
+            if (villagersWon) {
+              client
+                .sendText(groupId, "Villagers won!!!")
+                .then(() => mafiaApp.game.reset())
+                .catch((err) => {
+                  console.log(err);
+                });
+            } else if (mafiaWon) {
+              client
+                .sendText(groupId, "Mafia won!!!")
+                .then(() => mafiaApp.game.reset())
+                .catch((err) => {
+                  console.log(err);
+                });
+            } else {
+              mafiaApp.game.setNight();
+              client.sendText(groupId, "Village sleeps....");
+              aliveMafiaPlayers = mafiaApp.player.getAliveMafiaPlayers();
+
+              Promise.all(
+                aliveMafiaPlayers.map((playerId) => {
+                  client.addParticipant(mafiaGroupId, playerId);
+                })
+              )
+                .then(() => client.sendText(groupId, "Mafia awakens...."))
+                .then(() => mafiaApp.game.sleep(1000))
+                .then(() => {
+                  alivePlayers = mafiaApp.player.getAlivePlayers();
+                  client.sendMentioned(
+                    mafiaApp.game.getMafiaGroup(),
+                    `Murder one of the players : 
+                        ${alivePlayers
+                          .map(
+                            (playerId, index) =>
+                              `${index} @${getMentionFromId(playerId)}`
+                          )
+                          .join("\n")}
+                          
+                          Type murder <number> to murder the player from the numbered list
+          
+                          Remember that this is **not voting**. Decide among yourself and then choose one player to murder. Anyone can type the command to murder`,
+                    alivePlayers.map((playerId) => getMentionFromId(playerId))
+                  );if (villagersWon) {
+                    client
+                      .sendText(groupId, "Villagers won!!!")
+                      .then(() => mafiaApp.game.reset())
+                      .catch((err) => {
+                        console.log(err);
+                      });
+                  } else if (mafiaWon) {
+                    client
+                      .sendText(groupId, "Mafia won!!!")
+                      .then(() => mafiaApp.game.reset())
+                      .catch((err) => {
+                        console.log(err);
+                      });
+                  } else {
+                    mafiaApp.game.setNight();
+                    client.sendText(groupId, "Village sleeps....");
+                    aliveMafiaPlayers = mafiaApp.player.getAliveMafiaPlayers();
+          
+                    Promise.all(
+                      aliveMafiaPlayers.map((playerId) => {
+                        client.addParticipant(mafiaGroupId, playerId);
+                      })
+                    )
+                      .then(() => client.sendText(groupId, "Mafia awakens...."))
+                      .then(() => mafiaApp.game.sleep(1000))
+                      .then(() => {
+                        alivePlayers = mafiaApp.player.getAlivePlayers();
+                        client.sendMentioned(
+                          mafiaApp.game.getMafiaGroup(),
+                          `Murder one of the players : 
+                              ${alivePlayers
+                                .map(
+                                  (playerId, index) =>
+                                    `${index} @${getMentionFromId(playerId)}`
+                                )
+                                .join("\n")}
+                                
+                                Type murder <number> to murder the player from the numbered list
+                
+                                Remember that this is **not voting**. Decide among yourself and then choose one player to murder. Anyone can type the command to murder`,
+                          alivePlayers.map((playerId) => getMentionFromId(playerId))
+                        );
+                      })
+                      .catch((err) => {
+                        console.log(err);
+                        console.log(groupId);
+                        client.sendText(groupId, err);
+                      });
+                  }
+                })
+                .catch((err) => {
+                  console.log(err);
+                  console.log(groupId);
+                  client.sendText(groupId, err);
+                });
+            }
+          })
+          .catch((err) => {
+            console.log(err);
+          });
       } catch (err) {
         client.sendText(groupId, err);
       }

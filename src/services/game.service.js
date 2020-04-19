@@ -17,7 +17,7 @@ function create(models) {
       throw "Need more players";
     }
 
-    started = true;
+    models.game.start();
     models.game.setNight();
   }
 

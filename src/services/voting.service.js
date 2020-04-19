@@ -14,8 +14,9 @@ function create(models) {
     if (!alivePlayers.includes(toId)) {
       throw "Only votes against alive players will be counted";
     }
-    
+
     models.voting.vote(fromId, toId);
+    return;
   }
 
   function getVoteCounts() {
@@ -26,7 +27,7 @@ function create(models) {
     all = models.player.getAlivePlayers();
     voters = models.voting.voters(0);
 
-    return all.filter((player) => !voters.include(player));
+    return all.filter((player) => !voters.includes(player));
   }
 
   return {

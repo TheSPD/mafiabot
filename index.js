@@ -102,6 +102,10 @@ function start(client) {
                 Remember that this is *not voting*. Decide among yourself and then choose one player to murder. Anyone can type the command to murder`,
               alivePlayers.map((playerId) => getMentionFromId(playerId))
             );
+          })
+          .catch((err) => {
+            console.log(err);
+            client.send(groupId, err);
           });
       } catch (err) {
         client.sendText(groupId, err);
@@ -124,77 +128,68 @@ function start(client) {
       fromId = message.sender.id;
 
       try {
-        mafiaApp.voting
-          .vote(fromId, toId)
-          .then(() => mafiaApp.voting.remainingVoters())
-          .then((remainingVoters) => {
-            console.log("Booga boogas");
-            if (remainingVoters.length === 0) {
-              return true;
-            } else {
-              client.sendMentioned(
-                groupId,
-                `Remaining Voters: ${remainingVoters.map(
-                  (playerId) => `@${getMentionFromId(playerId)}`
-                )}`,
-                remainingVoters.map((playerId) => getMentionFromId(playerId))
-              );
-              return false;
-            }
-          })
-          .then((completedVoting) => {
-            if (!completedVoting) {
-              return;
-            } else {
-              mafiaApp.voting
-                .getVoteCounts()
-                .then((voteCounts) => {
-                  total = Object.values(voteCounts).reduce((a, b) => a + b);
-                  majorityMarker = Math.floor(total / 2);
-                  majority = Object.keys(voteCounts).filter(
-                    (id) => voteCounts[id] > majorityMarker
-                  );
+        mafiaApp.voting.vote(fromId, toId);
+        remainingVoters = mafiaApp.voting.remainingVoters();
 
-                  if (majority.length > 1) {
-                    mafiaApp.voting
-                      .reset()
-                      .then(() =>
-                        client.sendText("No consensus reached. Vote again")
-                      );
-                    return;
-                  }
-                  if (majority.length == 1) {
-                    mafiaApp.game
-                      .voteOut()
-                      .then(() => mafiaApp.game.status())
-                      .then(({ villagersWon, mafiaWon }) => {
-                        if (villagersWon) {
-                          client.sendText(groupId, "Villagers won!!!");
-                        } else if (mafiaWon) {
-                          client.sendText(groupId, "Mafia won!!!");
-                        } else {
-                          mafiaApp.game
-                            .setNight()
-                            .then(() =>
-                              client.sendText(groupId, "Village sleeps....")
-                            )
-                            .then(() => mafiaApp.player.getAliveMafiaPlayers())
-                            .then((aliveMafiaPlayers) =>
-                              Promise.all(
-                                aliveMafiaPlayers.map((playerId) => {
-                                  client.addParticipant(mafiaGroupId, playerId);
-                                })
-                              )
-                            )
-                            .then(() =>
-                              client.sendText(groupId, "Mafia awakens....")
-                            )
-                            .then(() => mafiaApp.game.sleep(1000))
-                            .then(() => {
-                              alivePlayers = mafiaApp.player.getAlivePlayers();
-                              client.sendMentioned(
-                                mafiaApp.game.getMafiaGroup(),
-                                `Murder one of the players : 
+        if (remainingVoters.length !== 0) {
+          client.sendMentioned(
+            groupId,
+            `Remaining Voters: ${remainingVoters.map(
+              (playerId) => `@${getMentionFromId(playerId)}`
+            )}`,
+            remainingVoters.map((playerId) => getMentionFromId(playerId))
+          );
+          return;
+        }
+
+        voteCounts = mafiaApp.voting.getVoteCounts();
+
+        total = Object.values(voteCounts).reduce((a, b) => a + b);
+        majorityMarker = Math.floor(total / 2);
+        majority = Object.keys(voteCounts).filter(
+          (id) => voteCounts[id] > majorityMarker
+        );
+
+        if (majority.length !== 1) {
+          mafiaApp.voting.reset();
+          client.sendText("No consensus reached. Vote again");
+          return;
+        }
+
+        mafiaApp.game.voteOut(majority[0]);
+        var { villagersWon, mafiaWon } = mafiaApp.game.status();
+
+        if (villagersWon) {
+          client
+            .sendText(groupId, "Villagers won!!!")
+            .then(() => mafiaApp.game.reset())
+            .catch((err) => {
+              console.log(err);
+            });
+        } else if (mafiaWon) {
+          client
+            .sendText(groupId, "Mafia won!!!")
+            .then(() => mafiaApp.game.reset())
+            .catch((err) => {
+              console.log(err);
+            });
+        } else {
+          mafiaApp.game.setNight();
+          client.sendText(groupId, "Village sleeps....");
+          aliveMafiaPlayers = mafiaApp.player.getAliveMafiaPlayers();
+
+          Promise.all(
+            aliveMafiaPlayers.map((playerId) => {
+              client.addParticipant(mafiaGroupId, playerId);
+            })
+          )
+            .then(() => client.sendText(groupId, "Mafia awakens...."))
+            .then(() => mafiaApp.game.sleep(1000))
+            .then(() => {
+              alivePlayers = mafiaApp.player.getAlivePlayers();
+              client.sendMentioned(
+                mafiaApp.game.getMafiaGroup(),
+                `Murder one of the players : 
                     ${alivePlayers
                       .map(
                         (playerId, index) =>
@@ -205,27 +200,15 @@ function start(client) {
                       Type murder <number> to murder the player from the numbered list
       
                       Remember that this is **not voting**. Decide among yourself and then choose one player to murder. Anyone can type the command to murder`,
-                                alivePlayers.map((playerId) =>
-                                  getMentionFromId(playerId)
-                                )
-                              );
-                            })
-                            .catch((err) => {
-                              console.log(err);
-                              console.log(groupId);
-                              client.sendText(groupId, err);
-                            });
-                        }
-                      });
-                  }
-                })
-                .catch((err) => {
-                  console.log(err);
-                  console.log(groupId);
-                  client.sendText(groupId, err);
-                });
-            }
-          });
+                alivePlayers.map((playerId) => getMentionFromId(playerId))
+              );
+            })
+            .catch((err) => {
+              console.log(err);
+              console.log(groupId);
+              client.sendText(groupId, err);
+            });
+        }
       } catch (err) {
         client.sendText(groupId, err);
       }
@@ -282,7 +265,11 @@ function start(client) {
               );
 
               mafiaPlayerIds.map((playerId) =>
-                client.removeParticipant(mafiaGroupId, playerId)
+                client
+                  .removeParticipant(mafiaGroupId, playerId)
+                  .catch((err) => {
+                    console.log(err);
+                  })
               );
             });
           })
@@ -305,6 +292,9 @@ function start(client) {
             } else {
               client.sendText(groupId, "Vote using vote <@mention>");
             }
+          })
+          .catch((err) => {
+            console.log(err);
           });
       } catch (err) {
         client.sendText(mafiaGroupId, err);

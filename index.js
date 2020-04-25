@@ -77,8 +77,12 @@ function start(client) {
           .sendText(groupId, "Village sleeps....")
           .then((resp) => mafiaApp.game.sleep(1000))
           .then(() => mafiaApp.game.assignMafias())
-          // .then(() => [senderId])
-          .then((mafiaPlayers) => client.createGroup("Mafiosos", mafiaPlayers))
+          .then(({ mafiaPlayers, doctor, detective }) => {
+            return client
+              .sendText(doctor, "You're the doctor!!")
+              .then(() => client.sendText(detective, "You're the detective!"))
+              .then(() => client.createGroup("Mafiosos", mafiaPlayers));
+          })
           .then(
             (groupResponse) => (mafiaGroupId = groupResponse.gid._serialized)
           )

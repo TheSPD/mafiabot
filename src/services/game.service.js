@@ -25,12 +25,16 @@ function create(models) {
     allPlayers = models.player.getAllPlayers();
     numOfMafias = Math.floor(allPlayers.length / 3);
     mafiaPlayers = _.sampleSize(allPlayers, numOfMafias);
+    peasants = allPlayers.filter((player) => !mafiaPlayers.includes(player));
+    detective = _.sample(peasants);
+    peasants = peasants.filter((player) => player !== detective);
+    doctor = _.sample(peasants);
     mafiaPlayers.forEach((mafiaPlayer) => {
       models.player.assignRole(mafiaPlayer, "MAFIA");
     });
     console.log(models.player.getAliveMafiaPlayers());
 
-    return mafiaPlayers;
+    return { mafiaPlayers, doctor, detective };
   }
 
   function linkGroup(id) {

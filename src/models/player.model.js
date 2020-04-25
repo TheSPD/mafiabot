@@ -3,11 +3,15 @@ function playerApi() {
   var listOfPlayers = [];
   var listOfAlivePlayers = [];
   var listOfMafiaPlayers = [];
+  var detectivePlayer = null;
+  var doctorPlayer = null;
 
   function reset() {
     listOfPlayers = [];
     listOfAlivePlayers = [];
     listOfMafiaPlayers = [];
+    detectivePlayer = null;
+    doctorPlayer = null;
   }
 
   function add(id) {
@@ -36,6 +40,10 @@ function playerApi() {
       case "MAFIA":
         listOfMafiaPlayers.push(id);
         return;
+      case "DETECTIVE":
+        detectivePlayer = id;
+      case "DOCTOR":
+        doctorPlayer = id;
       default:
         throw "Role not implemented";
     }
@@ -59,6 +67,14 @@ function playerApi() {
     );
   }
 
+  function getAliveDetectivePlayers() {
+    return listOfAlivePlayers.find((playerId) => playerId === detectivePlayer);
+  }
+
+  function getAliveDoctorPlayers() {
+    return listOfAlivePlayers.find((playerId) => playerId === doctorPlayer);
+  }
+
   function getAliveNonMafiaPlayers() {
     return listOfAlivePlayers.filter(
       (playerId) => !listOfMafiaPlayers.includes(playerId)
@@ -75,6 +91,8 @@ function playerApi() {
     getMafiaPlayers: getMafiaPlayers,
     getAliveMafiaPlayers: getAliveMafiaPlayers,
     getAliveNonMafiaPlayers: getAliveNonMafiaPlayers,
+    getAliveDetectivePlayers: getAliveDetectivePlayers,
+    getAliveDoctorPlayers: getAliveDoctorPlayers,
   };
 }
 

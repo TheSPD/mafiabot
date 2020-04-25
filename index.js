@@ -7,11 +7,20 @@ const mafiaApp = require("./src/app");
 //   host: "127.0.0.1",
 // });
 
-sulla.create().then((client) => start(client));
+sulla
+  .create("mafia", (qrCode, asciiQR) => {
+    // To log the QR in the terminal
+    console.log(asciiQR);
+  })
+  .then((client) => start(client));
 
 function getMentionFromId(id) {
   return `${id.split("@")[0]}`;
 }
+
+process.on("SIGINT", function () {
+  client.close();
+});
 
 function start(client) {
   client.onMessage((message) => {
@@ -25,7 +34,13 @@ function start(client) {
     if (message.body === "link") {
       groupId = message.from;
       mafiaApp.game.linkGroup(groupId);
-      client.sendText(groupId, "Group successfully linked!!!");
+      client
+        .getAllGroups()
+        .then((groups) =>
+          groups.find((group) => group.contact.formattedName === "Mafiosos")
+        )
+        .then((group) => mafiaApp.game.linkMafiaGroup(group.id._serialized))
+        .then(() => client.sendText(groupId, "Group successfully linked!!!"));
       return;
     }
 
@@ -78,10 +93,14 @@ function start(client) {
           .then((resp) => mafiaApp.game.sleep(1000))
           .then(() => mafiaApp.game.assignMafias())
           // .then(() => [senderId])
-          .then((mafiaPlayers) => client.createGroup("Mafiosos", mafiaPlayers))
-          .then(
-            (groupResponse) => (mafiaGroupId = groupResponse.gid._serialized)
-          )
+          .then((mafiaPlayers) => {
+            mafiaGroupId = mafiaApp.game.getMafiaGroup();
+            Promise.all(
+              mafiaPlayers.map((mafiaPlayer) => {
+                client.addParticipant(mafiaPlayer);
+              })
+            );
+          })
           .then(() => client.sendText(groupId, "Mafia awakens...."))
           .then(() => mafiaApp.game.linkMafiaGroup(mafiaGroupId))
           .then(() => client.sendText(mafiaGroupId, "You're all mafias!!!"))
